@@ -42,17 +42,20 @@ class Monitor(object):
 
     def printConfs(self,element):
         result = self._getvalues(element)
+        typeod = 'AREA'
         print("graph_title elasticsearch %s" % self.elements[element][0])
         print("graph_category elasticsearch")
         print("graph_args --base 1000 -l 0")
         print("graph_vlabel request")
         for key, value in result.iteritems():
+            if str(key) != self.elements[element][1][0]:
+                typeod = 'STACK'
             if key in self.elements[element][1]:
                 Ckey = key.capitalize()
                 print("%s.label %s" % (key,Ckey))
                 print("%s.type DERIVE" % key)
+                print("%s.draw %s" % (key,typeod))
                 print("%s.min 0" % key)
-                print("%s.draw STACK" % key)
 
     def printElements(self):
         for key in self.elements.keys():
