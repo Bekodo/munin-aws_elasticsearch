@@ -1,0 +1,71 @@
+#!/usr/bin/python2.7
+
+import sys, os
+import pycurl
+import StringIO
+import json
+
+class Monitor(object):
+    endpoint = ''
+    elements = {'docs':['Docs',['count','deleted']],
+                'search':['Search',['query_total']],
+                'query_cache':['Query cache',['miss_count','hit_count']]
+                }
+
+    def __init__(self):
+        host = os.environ.get('host')
+        index = os.environ.get('index')
+        self.endpoint = 'https://'+host+'/'+index+'/_stats'
+
+    def _getresults(self):
+        output = StringIO.StringIO()
+        conn = pycurl.Curl()
+        conn.setopt(pycurl.URL, self.endpoint)
+        conn.setopt(pycurl.HTTPHEADER,['Content-Type: application/json'])
+        conn.setopt(pycurl.WRITEFUNCTION, output.write)
+        conn.perform()
+        result = output.getvalue()
+        output.close()
+        conn.close()
+        return result
+
+    def _getvalues(self,element):
+        result = json.loads(self._getresults())
+        value = result['indices']['editorabetevecat-1']['total'][element]
+        return value
+
+    def printValues(self,element):
+        result = self._getvalues(element)
+        for key, value in result.iteritems():
+            if key in self.elements[element][1]:
+                print("%s.value %d" % (key,value))
+
+    def printConfs(self,element):
+        result = self._getvalues(element)
+        print("graph_title elasticsearch %s" % self.elements[element][0])
+        print("graph_category elasticsearch")
+        print("graph_args --base 1000 -l 0")
+        print("graph_vlabel request")
+        for key, value in result.iteritems():
+            if key in self.elements[element][1]:
+                Ckey = key.capitalize()
+                print("%s.label %s" % (key,Ckey))
+                print("%s.type DERIVE" % key)
+                print("%s.min 0" % key)
+                print("%s.draw STACK" % key)
+
+    def printElements(self):
+        for key in self.elements.keys():
+            print("%s" % key)
+
+if __name__ == '__main__':
+    monitor = Monitor()
+    element = sys.argv[0].split("-")
+    if len(sys.argv) < 2:
+        monitor.printValues(element[1])
+    elif sys.argv[1] == "config":
+        monitor.printConfs(element[1])
+    elif sys.argv[1] == "suggest":
+        monitor.printElements()
+    else:
+        print("Something Wrong")
