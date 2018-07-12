@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/opt/local/bin/python
 
 import sys, os
 import pycurl
@@ -16,6 +16,10 @@ class Monitor(object):
     def __init__(self):
         host = os.environ.get('host')
         self.index = os.environ.get('index')
+        if not host:
+            host = 'localhost'
+        if not self.index:
+            self.index = 'someindex'
         self.endpoint = 'https://'+host+'/'+self.index+'/_stats'
 
     def _getresults(self):
@@ -31,7 +35,7 @@ class Monitor(object):
         return result
 
     def _getvalues(self,element):
-	index =  self.index
+        index =  self.index
         result = json.loads(self._getresults())
         value = result['indices'][index]['total'][element]
         return value
@@ -66,12 +70,13 @@ class Monitor(object):
 
 if __name__ == '__main__':
     monitor = Monitor()
+    if sys.argv[1] == "suggest":
+        monitor.printElements()
+        sys.exit()
     element = sys.argv[0].split("-")
     if len(sys.argv) < 2:
         monitor.printValues(element[1])
     elif sys.argv[1] == "config":
         monitor.printConfs(element[1])
-    elif sys.argv[1] == "suggest":
-        monitor.printElements()
     else:
         print("Something Wrong")
