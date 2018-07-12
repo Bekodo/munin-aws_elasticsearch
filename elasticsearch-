@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python
 
 import sys, os
 import pycurl
@@ -7,6 +7,7 @@ import json
 
 class Monitor(object):
     endpoint = ''
+    index = ''
     elements = {'docs':['Docs',['count','deleted']],
                 'search':['Search',['query_total']],
                 'query_cache':['Query cache',['miss_count','hit_count']]
@@ -14,8 +15,8 @@ class Monitor(object):
 
     def __init__(self):
         host = os.environ.get('host')
-        index = os.environ.get('index')
-        self.endpoint = 'https://'+host+'/'+index+'/_stats'
+        self.index = os.environ.get('index')
+        self.endpoint = 'https://'+host+'/'+self.index+'/_stats'
 
     def _getresults(self):
         output = StringIO.StringIO()
@@ -30,8 +31,9 @@ class Monitor(object):
         return result
 
     def _getvalues(self,element):
+	index =  self.index
         result = json.loads(self._getresults())
-        value = result['indices']['editorabetevecat-1']['total'][element]
+        value = result['indices'][index]['total'][element]
         return value
 
     def printValues(self,element):
@@ -46,7 +48,8 @@ class Monitor(object):
         print("graph_title elasticsearch %s" % self.elements[element][0])
         print("graph_category elasticsearch")
         print("graph_args --base 1000 -l 0")
-        print("graph_vlabel request")
+        print("graph_period minute")
+        print("graph_vlabel request per minute")
         for key, value in result.iteritems():
             if str(key) != self.elements[element][1][0]:
                 typeod = 'STACK'
